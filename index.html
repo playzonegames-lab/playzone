@@ -1,220 +1,205 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course de voiture</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-    <title>PlayZone - Jeux gratuits en ligne</title>
+    body {
+      margin: 0;
+      background: #151515;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
 
-    <meta name="description" content="PlayZone : joue gratuitement à des mini-jeux de voitures, stickman et bien plus encore.">
+    h1 {
+      margin: 20px 0 10px;
+    }
 
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    #score {
+      font-size: 22px;
+      margin: 12px;
+    }
 
-        body {
-            font-family: Arial, sans-serif;
-            background: #0f172a;
-            color: white;
-        }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      width: min(95vw, 360px);
+      height: auto;
+      background: #333;
+      border: 3px solid white;
+      border-radius: 8px;
+    }
 
-        header {
-            background: #111827;
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-        nav a {
-            color: white;
-            text-decoration: none;
-            margin-left: 25px;
-        }
-
-        nav a:hover {
-            color: #38bdf8;
-        }
-
-        .hero {
-            text-align: center;
-            padding: 80px 20px;
-            background: linear-gradient(135deg, #1e293b, #172554);
-        }
-
-        .hero h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-
-        .hero p {
-            font-size: 20px;
-            color: #cbd5e1;
-            margin-bottom: 30px;
-        }
-
-        .button {
-            display: inline-block;
-            background: #38bdf8;
-            color: #0f172a;
-            padding: 14px 28px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .section {
-            padding: 50px 30px;
-            max-width: 1100px;
-            margin: auto;
-        }
-
-        .section h2 {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 32px;
-        }
-
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-        }
-
-        .card {
-            background: #1e293b;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-        }
-
-        .card h3 {
-            margin-bottom: 15px;
-            font-size: 24px;
-        }
-
-        .card p {
-            color: #cbd5e1;
-            margin-bottom: 20px;
-        }
-
-        footer {
-            text-align: center;
-            padding: 30px;
-            background: #111827;
-            color: #94a3b8;
-        }
-
-        @media (max-width: 700px) {
-            header {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            nav a {
-                margin: 0 8px;
-            }
-
-            .hero h1 {
-                font-size: 36px;
-            }
-        }
-    </style>
+    button {
+      margin: 12px 5px;
+      padding: 14px 22px;
+      border: none;
+      border-radius: 8px;
+      background: #20c55a;
+      color: #111;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
 </head>
-
 <body>
+  <h1>🏎️ Course de voiture</h1>
+  <div id="score">Score : 0</div>
 
-    <header>
-        <div class="logo">🎮 PlayZone</div>
+  <canvas id="game" width="360" height="600"></canvas>
 
-        <nav>
-            <a href="#jeux">Jeux</a>
-            <a href="#categories">Catégories</a>
-        </nav>
-    </header>
+  <div>
+    <button id="left">⬅️ Gauche</button>
+    <button id="right">Droite ➡️</button>
+  </div>
+  <button id="start">Commencer la course</button>
 
-    <section class="hero">
-        <h1>Bienvenue sur PlayZone 🎮</h1>
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const scoreDisplay = document.getElementById("score");
 
-        <p>
-            Des mini-jeux gratuits directement dans ton navigateur.
-        </p>
+    const car = {
+      x: 155,
+      y: 475,
+      width: 50,
+      height: 85,
+      speed: 5
+    };
 
-        <a href="#jeux" class="button">Jouer maintenant</a>
-    </section>
+    let obstacles = [];
+    let score = 0;
+    let running = false;
+    let animation;
+    let lastObstacle = 0;
 
-    <section class="section" id="jeux">
-        <h2>🔥 Nos jeux</h2>
+    function drawCar(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, 50, 85);
 
-        <div class="cards">
+      ctx.fillStyle = "#bdeaff";
+      ctx.fillRect(x + 8, y + 10, 34, 20);
 
-            <div class="card">
-                <h3>🚗 Jeux de voitures</h3>
+      ctx.fillStyle = "#222";
+      ctx.fillRect(x - 5, y + 12, 7, 20);
+      ctx.fillRect(x + 48, y + 12, 7, 20);
+      ctx.fillRect(x - 5, y + 55, 7, 20);
+      ctx.fillRect(x + 48, y + 55, 7, 20);
+    }
 
-                <p>
-                    Courses, drift, parking et conduite.
-                </p>
+    function drawRoad() {
+      ctx.fillStyle = "#333";
+      ctx.fillRect(0, 0, 360, 600);
 
-                <a href="games/traffic-rush.html" class="button">Jouer</a>
-            </div>
+      ctx.fillStyle = "#eee";
+      ctx.fillRect(10, 0, 5, 600);
+      ctx.fillRect(345, 0, 5, 600);
 
-            <div class="card">
-                <h3>🥷 Jeux Stickman</h3>
+      ctx.fillStyle = "#aaa";
+      for (let y = 0; y < 600; y += 80) {
+        ctx.fillRect(118, (y + score * 3) % 600, 5, 40);
+        ctx.fillRect(237, (y + score * 3) % 600, 5, 40);
+      }
+    }
 
-                <p>
-                    Combat, parkour, tir et aventure.
-                </p>
+    function draw() {
+      drawRoad();
+      drawCar(car.x, car.y, "#16a34a");
 
-                <a href="#" class="button">Voir les jeux</a>
-            </div>
+      obstacles.forEach(obstacle => {
+        drawCar(obstacle.x, obstacle.y, "#ef4444");
+      });
+    }
 
-            <div class="card">
-                <h3>🏆 Défi du jour</h3>
+    function endGame() {
+      running = false;
+      cancelAnimationFrame(animation);
+      draw();
 
-                <p>
-                    Relève le défi et bats ton meilleur score.
-                </p>
+      ctx.fillStyle = "rgba(0,0,0,0.75)";
+      ctx.fillRect(25, 235, 310, 120);
 
-                <a href="#" class="button">Jouer</a>
-            </div>
+      ctx.fillStyle = "white";
+      ctx.textAlign = "center";
+      ctx.font = "bold 25px Arial";
+      ctx.fillText("Course terminée !", 180, 280);
+      ctx.font = "20px Arial";
+      ctx.fillText("Score : " + score, 180, 320);
+    }
 
-        </div>
-    </section>
+    function loop(timestamp) {
+      if (!running) return;
 
-    <section class="section" id="categories">
-        <h2>🎮 Catégories</h2>
+      if (timestamp - lastObstacle > 1000) {
+        obstacles.push({
+          x: [35, 155, 275][Math.floor(Math.random() * 3)],
+          y: -90
+        });
+        lastObstacle = timestamp;
+      }
 
-        <div class="cards">
+      obstacles.forEach(obstacle => {
+        obstacle.y += 4;
 
-            <div class="card">
-                <h3>🚘 Voitures</h3>
-                <p>Des jeux de conduite et de course.</p>
-            </div>
+        if (
+          car.x < obstacle.x + 50 &&
+          car.x + car.width > obstacle.x &&
+          car.y < obstacle.y + 85 &&
+          car.y + car.height > obstacle.y
+        ) {
+          endGame();
+        }
+      });
 
-            <div class="card">
-                <h3>🥷 Stickman</h3>
-                <p>Des jeux rapides et amusants.</p>
-            </div>
+      if (!running) return;
 
-            <div class="card">
-                <h3>⭐ Nouveautés</h3>
-                <p>Découvre les nouveaux jeux.</p>
-            </div>
+      obstacles = obstacles.filter(obstacle => {
+        if (obstacle.y > 600) {
+          score++;
+          scoreDisplay.textContent = "Score : " + score;
+          return false;
+        }
+        return true;
+      });
 
-        </div>
-    </section>
+      draw();
+      animation = requestAnimationFrame(loop);
+    }
 
-    <footer>
-        © 2026 PlayZone - Mini-jeux gratuits
-    </footer>
+    function moveCar(direction) {
+      if (!running) return;
+      car.x += direction * 60;
+      car.x = Math.max(20, Math.min(290, car.x));
+    }
 
+    document.getElementById("left").addEventListener("click", () => moveCar(-1));
+    document.getElementById("right").addEventListener("click", () => moveCar(1));
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "ArrowLeft") moveCar(-1);
+      if (event.key === "ArrowRight") moveCar(1);
+    });
+
+    document.getElementById("start").addEventListener("click", () => {
+      cancelAnimationFrame(animation);
+      car.x = 155;
+      obstacles = [];
+      score = 0;
+      lastObstacle = 0;
+      running = true;
+      scoreDisplay.textContent = "Score : 0";
+      animation = requestAnimationFrame(loop);
+    });
+
+    draw();
+  </script>
 </body>
 </html>
